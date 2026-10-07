@@ -14,12 +14,28 @@ export function ThemeToggle() {
   const nextTheme = isDark ? "light" : "dark";
   const Icon = isDark ? Moon : Sun;
 
+  function toggleTheme() {
+    if (!mounted) return;
+
+    const applyTheme = () => setTheme(nextTheme);
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      !("startViewTransition" in document)
+    ) {
+      applyTheme();
+      return;
+    }
+
+    document.documentElement.dataset.themeDirection = nextTheme;
+    document.startViewTransition(applyTheme);
+  }
+
   return (
     <button
       aria-label={`Switch to ${nextTheme} theme`}
       className="icon-button theme-toggle"
       disabled={!mounted}
-      onClick={() => setTheme(nextTheme)}
+      onClick={toggleTheme}
       title="Toggle theme"
       type="button"
     >
