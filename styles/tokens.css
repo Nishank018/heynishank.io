@@ -1,0 +1,33 @@
+:root {
+  color-scheme: dark;
+  --background: 0 0% 4%;
+  --foreground: 60 9% 98%;
+  --muted: 0 0% 9%;
+  --muted-foreground: 60 2% 74%;
+  --border: 0 0% 18%;
+  --card: 0 0% 6%;
+  --accent: 22 72% 64%;
+  --radius: 1px;
+  --status-live: #72d3a0;
+  --status-building: #e9b56c;
+  --status-done: #ed7b73;
+  --font-pixel: var(--font-geist-pixel-circle);
+  --font-geist-sans: var(--font-pixel);
+  --font-geist-mono: var(--font-pixel);
+  --page-width: 768px;
+  --page-gutter: 24px;
+}
+
+.light {
+  color-scheme: light;
+  --background: 48 20% 98%;
+  --foreground: 150 8% 0%;
+  --muted: 45 11% 94%;
+  --muted-foreground: 150 6% 8%;
+  --border: 45 6% 82%;
+  --card: 0 0% 100%;
+  --accent: 22 72% 48%;
+  --status-live: #258c58;
+  --status-building: #a7690d;
+  --status-done: #bf4942;
+}
