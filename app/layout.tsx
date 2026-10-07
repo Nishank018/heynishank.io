@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: "Nishank Gupta — AI Engineer in Training & Full Stack Developer",
   description:
     "Nishank Gupta is a full-stack developer in Lucknow, India, learning to build practical AI applications.",
+  icons: {
+    icon: [{ url: "/favicon.png?v=2", type: "image/png", sizes: "512x512" }],
+  },
 };
 
 export const viewport: Viewport = {
