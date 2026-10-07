@@ -12,7 +12,7 @@ import "@/styles/chat.css";
 import "@/styles/admin.css";
 
 export const metadata: Metadata = {
-  title: "Nishank Gupta — AI Engineer in Training & Full Stack Developer",
+  title: "Nishank Gupta",
   description:
     "Nishank Gupta is a full-stack developer in Lucknow, India, learning to build practical AI applications.",
   icons: {
