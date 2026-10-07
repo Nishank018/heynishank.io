@@ -16,12 +16,8 @@ export const metadata: Metadata = {
   description:
     "Nishank Gupta is a full-stack developer in Lucknow, India, learning to build practical AI applications.",
   icons: {
-    icon: [
-      { url: "/safari-favicon.ico?v=1", type: "image/x-icon", sizes: "32x32" },
-      { url: "/nishank-favicon.png?v=1", type: "image/png", sizes: "512x512" },
-    ],
-    shortcut: "/safari-favicon.ico?v=1",
-    apple: [{ url: "/apple-touch-icon.png?v=1", sizes: "180x180" }],
+    icon: [{ url: "/favicon.svg?v=3", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-touch-icon.png?v=2", sizes: "180x180" }],
   },
 };
 
