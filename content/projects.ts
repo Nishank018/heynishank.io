@@ -49,12 +49,21 @@ export const projects: Project[] = [
     title: "PlaylistPilot",
     status: "live",
     categories: ["fullstack"],
-    tagline: "Turns YouTube playlists into daily study plans.",
-    summary: "Turns YouTube playlists into study plans matched to available time.",
-    problem: "Planning long video playlists around a learner’s available time is difficult.",
-    approach: "Greedy scheduling algorithm plus Markdown export.",
-    stack: ["HTML5", "CSS3", "JavaScript", "LocalStorage"],
-    links: {},
+    tagline: "Turn 50-hour YouTube playlists into 10-day roadmaps.",
+    summary:
+      "Automated YouTube syllabus engine that transforms any course playlist into a personalized daily study schedule with smart speed calibration.",
+    problem:
+      "Long educational playlists lack structured pacing and daily scheduling tailored to a learner's available study time.",
+    approach:
+      "Greedy syllabus scheduling engine in vanilla JavaScript, HTML & CSS with smart speed calibration and local storage.",
+    result:
+      "Generates structured day-by-day learning roadmaps with instant demo presets for popular engineering courses.",
+    stack: ["Vanilla JS", "HTML5", "CSS3", "LocalStorage"],
+    links: {
+      live: "https://playlist-pilot-chi.vercel.app",
+    },
+    cover: "/projects/playlistpilot.png",
+    badge: "v2.0",
     featured: true,
     order: 1,
     published: true,

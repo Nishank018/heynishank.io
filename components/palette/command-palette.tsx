@@ -14,6 +14,8 @@ import {
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSound } from "@/hooks/use-sound";
+import { click004Sound } from "@/lib/sounds/click-004";
 import { projects } from "@/content/projects";
 import { siteContent } from "@/content/site";
 
@@ -21,6 +23,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const { setTheme } = useTheme();
+  const [playClick] = useSound(click004Sound);
   const router = useRouter();
   const navigate = (href: string) => {
     router.push(href);
@@ -146,6 +149,7 @@ export function CommandPalette() {
                 <Command.Group heading="Theme">
                   <Command.Item
                     onSelect={() => {
+                      playClick();
                       setTheme("light");
                       setOpen(false);
                     }}
@@ -155,6 +159,7 @@ export function CommandPalette() {
                   </Command.Item>
                   <Command.Item
                     onSelect={() => {
+                      playClick();
                       setTheme("dark");
                       setOpen(false);
                     }}
@@ -164,6 +169,7 @@ export function CommandPalette() {
                   </Command.Item>
                   <Command.Item
                     onSelect={() => {
+                      playClick();
                       setTheme("system");
                       setOpen(false);
                     }}

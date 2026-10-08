@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/content/projects";
 
@@ -36,12 +37,24 @@ export function ProjectList({ projects }: { projects: Project[] }) {
           {visible.map((project) => (
             <article className="inner-project" key={project.slug}>
               <div className="inner-project__cover">
-                <span className="project-window">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <b>{project.title}</b>
+                {project.cover ? (
+                  <Image
+                    src={project.cover}
+                    alt={`${project.title} preview`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="project-visual-image"
+                  />
+                ) : (
+                  <>
+                    <span className="project-window">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <b>{project.title}</b>
+                  </>
+                )}
                 {project.badge && <span className="cover-badge">{project.badge}</span>}
               </div>
               <div className="inner-project__body">

@@ -15,6 +15,7 @@ import {
   Instagram,
   Linkedin,
   MapPin,
+  RotateCw,
   Sparkles,
   X,
   Youtube,
@@ -26,6 +27,8 @@ import type { Project } from "@/content/projects";
 import { skills } from "@/content/skills";
 import { Container } from "@/components/ui/primitives";
 import { ProfileViews } from "@/components/sections/profile-views";
+import { useSound } from "@/hooks/use-sound";
+import { cardSlide1Sound } from "@/lib/sounds/card-slide-1";
 
 function RuleTitle({ n, children, id }: { n: string; children: React.ReactNode; id?: string }) {
   return (
@@ -45,6 +48,8 @@ export function HomePage({ projects }: { projects: Project[] }) {
   const [roleIndex, setRoleIndex] = useState(0);
   const [roleText, setRoleText] = useState("");
   const [deletingRole, setDeletingRole] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [playCardFlip] = useSound(cardSlide1Sound, { volume: 1 });
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -126,16 +131,50 @@ export function HomePage({ projects }: { projects: Project[] }) {
       <Container>
         <div aria-hidden="true" className="profile-banner" />
         <section className="profile-row">
-          <div className="avatar-monogram">
-            <Image
-              src="/profile.png"
-              alt="Stylized portrait of Nishank Gupta"
-              fill
-              priority
-              sizes="(max-width: 600px) 88px, 116px"
-              className="profile-avatar-image"
-            />
-          </div>
+          <button
+            type="button"
+            className={`avatar-monogram ${isFlipped ? "is-flipped" : ""}`}
+            onClick={() => {
+              playCardFlip();
+              setIsFlipped((prev) => !prev);
+            }}
+            aria-label={
+              isFlipped
+                ? "Showing real photo. Click to show illustrated avatar."
+                : "Showing illustrated avatar. Click to reveal real photo."
+            }
+            title={
+              isFlipped
+                ? "Click to switch to illustrated avatar"
+                : "Click to reveal real photo"
+            }
+          >
+            <div className="avatar-flipper-inner">
+              <div className="avatar-face avatar-face-front">
+                <Image
+                  src="/profile.png"
+                  alt="Stylized portrait of Nishank Gupta"
+                  fill
+                  priority
+                  sizes="(max-width: 600px) 88px, 116px"
+                  className="profile-avatar-image"
+                />
+              </div>
+              <div className="avatar-face avatar-face-back">
+                <Image
+                  src="/profile-real.jpg"
+                  alt="Real portrait of Nishank Gupta"
+                  fill
+                  priority
+                  sizes="(max-width: 600px) 88px, 116px"
+                  className="profile-avatar-image profile-avatar-real"
+                />
+              </div>
+            </div>
+            <span className="avatar-flip-hint" aria-hidden="true">
+              <RotateCw size={11} />
+            </span>
+          </button>
           <div className="profile-copy">
             <div className="eyebrow">
               PERSONAL PORTFOLIO <span>·</span> 2025—26
@@ -355,14 +394,26 @@ export function HomePage({ projects }: { projects: Project[] }) {
                   transition={{ duration: 0.45, delay: i * 0.07 }}
                 >
                   <div className={`project-visual project-visual--${i + 1}`}>
-                    <span className="project-window">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                    <strong>{project.title}</strong>
-                    <span className="project-mock-line" />
-                    <span className="project-mock-line short" />
+                    {project.cover ? (
+                      <Image
+                        src={project.cover}
+                        alt={`${project.title} preview`}
+                        fill
+                        sizes="(max-width: 600px) 100vw, 360px"
+                        className="project-visual-image"
+                      />
+                    ) : (
+                      <>
+                        <span className="project-window">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                        <strong>{project.title}</strong>
+                        <span className="project-mock-line" />
+                        <span className="project-mock-line short" />
+                      </>
+                    )}
                   </div>
                   <div className="project-meta">
                     <span className={`status ${project.status === "live" ? "status--active" : ""}`}>

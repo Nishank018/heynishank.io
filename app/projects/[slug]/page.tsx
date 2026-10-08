@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { InnerPage } from "@/components/sections/inner-page";
@@ -32,6 +33,18 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
       subtitle={project.tagline}
       action={{ label: "View all projects", href: "/projects" }}
     >
+      {project.cover && (
+        <div className="case-study-hero">
+          <Image
+            src={project.cover}
+            alt={`${project.title} screenshot`}
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="case-study-image"
+            priority
+          />
+        </div>
+      )}
       <div className="case-study">
         <div className="case-row">
           <b>Problem</b>

@@ -3,10 +3,13 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useSound } from "@/hooks/use-sound";
+import { click004Sound } from "@/lib/sounds/click-004";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [playClick] = useSound(click004Sound);
 
   useEffect(() => setMounted(true), []);
 
@@ -16,6 +19,7 @@ export function ThemeToggle() {
 
   function toggleTheme() {
     if (!mounted) return;
+    playClick();
 
     const applyTheme = () => setTheme(nextTheme);
     if (
