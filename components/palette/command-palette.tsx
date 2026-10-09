@@ -85,6 +85,7 @@ export function CommandPalette() {
                     ["Analytics", "/analytics"],
                     ["Support", "/support"],
                     ["Contact", "/contact"],
+                    ["Admin CMS", "/admin"],
                     ["AI engineering stack", "/#stack"],
                     ["Chat prototype", "/chat"],
                   ].map(([label, href]) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -20,13 +20,11 @@ import {
   X,
   Youtube,
   Facebook,
+  Share2,
 } from "lucide-react";
-import { siteContent } from "@/content/site";
-import { experience } from "@/content/experience";
+import type { SiteProfileData, ExperienceData, SkillGroupData } from "@/lib/site-data";
 import type { Project } from "@/content/projects";
-import { skills } from "@/content/skills";
 import { Container } from "@/components/ui/primitives";
-import { ProfileViews } from "@/components/sections/profile-views";
 import { useSound } from "@/hooks/use-sound";
 import { cardSlide1Sound } from "@/lib/sounds/card-slide-1";
 
@@ -40,9 +38,29 @@ function RuleTitle({ n, children, id }: { n: string; children: React.ReactNode; 
   );
 }
 
-const roleTitles = ["AI Engineer in training", "Full-stack developer", "23 · Builder"];
+function getSocialIcon(name: string) {
+  const n = name.toLowerCase();
+  if (n.includes("github")) return <Github />;
+  if (n.includes("linkedin")) return <Linkedin />;
+  if (n.includes("twitter") || n === "x" || n.includes(" x")) return <X />;
+  if (n.includes("instagram")) return <Instagram />;
+  if (n.includes("youtube")) return <Youtube />;
+  if (n.includes("facebook")) return <Facebook />;
+  if (n.includes("medium")) return <span className="social-medium-mark">M</span>;
+  return <Share2 />;
+}
 
-export function HomePage({ projects }: { projects: Project[] }) {
+export function HomePage({
+  profile,
+  projects,
+  experiences,
+  skills,
+}: {
+  profile: SiteProfileData;
+  projects: Project[];
+  experiences: ExperienceData[];
+  skills: SkillGroupData[];
+}) {
   const router = useRouter();
   const [ask, setAsk] = useState("");
   const [roleIndex, setRoleIndex] = useState(0);
@@ -51,14 +69,20 @@ export function HomePage({ projects }: { projects: Project[] }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [playCardFlip] = useSound(cardSlide1Sound, { volume: 1 });
 
+  const roleTitles = useMemo(() => {
+    return profile.roleTitles && profile.roleTitles.length > 0
+      ? profile.roleTitles
+      : ["AI Engineer in training", "Full-stack developer", "23 · Builder"];
+  }, [profile.roleTitles]);
+
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setRoleText(roleTitles[roleIndex]);
+      setRoleText(roleTitles[roleIndex] || "");
       setDeletingRole(false);
       return;
     }
 
-    const currentRole = roleTitles[roleIndex];
+    const currentRole = roleTitles[roleIndex] || roleTitles[0] || "";
     let timeout: number;
 
     if (!deletingRole && roleText === currentRole) {
@@ -80,52 +104,15 @@ export function HomePage({ projects }: { projects: Project[] }) {
     }
 
     return () => window.clearTimeout(timeout);
-  }, [roleIndex, roleText, deletingRole]);
+  }, [roleIndex, roleText, deletingRole, roleTitles]);
 
-  const socialLinks = [
-    {
-      name: "GitHub",
-      href: `https://github.com/${siteContent.handles.github}`,
-      detail: `@${siteContent.handles.github}`,
-      icon: <Github />,
-    },
-    {
-      name: "Twitter",
-      href: siteContent.handles.x || undefined,
-      detail: siteContent.handles.x || "",
-      icon: <X />,
-    },
-    {
-      name: "LinkedIn",
-      href: `https://linkedin.com/in/${siteContent.handles.linkedin}`,
-      detail: siteContent.handles.linkedin,
-      icon: <Linkedin />,
-    },
-    {
-      name: "Instagram",
-      href: siteContent.handles.instagram || undefined,
-      detail: siteContent.handles.instagram || "",
-      icon: <Instagram />,
-    },
-    {
-      name: "Medium",
-      href: siteContent.handles.medium || undefined,
-      detail: siteContent.handles.medium || "",
-      icon: <span className="social-medium-mark">M</span>,
-    },
-    {
-      name: "YouTube",
-      href: siteContent.handles.youtube || undefined,
-      detail: siteContent.handles.youtube || "",
-      icon: <Youtube />,
-    },
-    {
-      name: "Facebook",
-      href: siteContent.handles.facebook || undefined,
-      detail: siteContent.handles.facebook || "",
-      icon: <Facebook />,
-    },
-  ];
+  const socialLinks = profile.socials.map((s) => ({
+    name: s.name,
+    href: s.href || undefined,
+    detail: s.detail || "",
+    icon: getSocialIcon(s.name),
+  }));
+
   return (
     <main className="home-main">
       <Container>
@@ -152,20 +139,22 @@ export function HomePage({ projects }: { projects: Project[] }) {
             <div className="avatar-flipper-inner">
               <div className="avatar-face avatar-face-front">
                 <Image
-                  src="/profile.png"
-                  alt="Stylized portrait of Nishank Gupta"
+                  src={profile.pfp1 || "/profile.png"}
+                  alt={`Stylized portrait of ${profile.name}`}
                   fill
                   priority
+                  unoptimized
                   sizes="(max-width: 600px) 88px, 116px"
                   className="profile-avatar-image"
                 />
               </div>
               <div className="avatar-face avatar-face-back">
                 <Image
-                  src="/profile-real.jpg"
-                  alt="Real portrait of Nishank Gupta"
+                  src={profile.pfp2 || "/profile-real.jpg"}
+                  alt={`Real portrait of ${profile.name}`}
                   fill
                   priority
+                  unoptimized
                   sizes="(max-width: 600px) 88px, 116px"
                   className="profile-avatar-image profile-avatar-real"
                 />
@@ -180,7 +169,7 @@ export function HomePage({ projects }: { projects: Project[] }) {
               PERSONAL PORTFOLIO <span>·</span> 2025—26
             </div>
             <h1 className="profile-name">
-              {siteContent.name}
+              {profile.name}
               <span
                 className="profile-check"
                 title="Portfolio profile"
@@ -197,14 +186,20 @@ export function HomePage({ projects }: { projects: Project[] }) {
               </span>
             </p>
             <div className="profile-location">
-              <MapPin size={13} /> {siteContent.location}
-              {siteContent.featureFlags.showViewCounter && <ProfileViews />}
+              <MapPin size={13} /> {profile.location}
             </div>
           </div>
-          <a className="resume-icon" href="/resume" aria-label="View resume">
+          <a
+            className="resume-icon"
+            href={profile.resumeUrl || "/resume"}
+            aria-label="View resume"
+            target={profile.resumeUrl ? "_blank" : undefined}
+            rel={profile.resumeUrl ? "noreferrer" : undefined}
+          >
             <ArrowUpRight size={17} />
           </a>
         </section>
+
         <button className="ask-bar" onClick={() => document.getElementById("ask-input")?.focus()}>
           <Sparkles size={15} />
           <span>Ask anything about me...</span>
@@ -219,7 +214,7 @@ export function HomePage({ projects }: { projects: Project[] }) {
         >
           <input
             id="ask-input"
-            aria-label="Ask about Nishank"
+            aria-label={`Ask about ${profile.name}`}
             value={ask}
             onChange={(e) => setAsk(e.target.value)}
             placeholder="Ask about my work, projects, or experience"
@@ -229,6 +224,7 @@ export function HomePage({ projects }: { projects: Project[] }) {
           </button>
         </form>
 
+        {/* SECTION 01: ABOUT */}
         <motion.section
           className="home-section"
           id="about"
@@ -239,14 +235,20 @@ export function HomePage({ projects }: { projects: Project[] }) {
         >
           <RuleTitle n="01">About</RuleTitle>
           <ul className="about-list">
-            {siteContent.about.map((line) => (
-              <li key={line}>
-                <span aria-hidden="true">•</span>
-                {line}
-              </li>
-            ))}
+            {(profile.about || [])
+              .flatMap((item) => (typeof item === "string" ? item.split(/\r?\n+/) : []))
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .map((line, idx) => (
+                <li key={idx}>
+                  <span aria-hidden="true">•</span>
+                  {line}
+                </li>
+              ))}
           </ul>
         </motion.section>
+
+        {/* SECTION 02: CONNECT */}
         <section className="home-section contact-section" id="contact">
           <RuleTitle n="02">Connect</RuleTitle>
           <div className="contact-socials">
@@ -284,12 +286,14 @@ export function HomePage({ projects }: { projects: Project[] }) {
             )}
           </div>
         </section>
+
+        {/* SECTION 03: SKILLS */}
         <section className="home-section" id="stack">
           <RuleTitle n="03">Skills &amp; Technologies</RuleTitle>
           <p className="stack-intro">Languages, frameworks, platforms, and tools I work with.</p>
           <div className="stack-list">
             {skills.map((group, index) => (
-              <div className="stack-row" key={group.number}>
+              <div className="stack-row" key={group.id || group.number}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <b>{group.group}</b>
                 <div className="chip-list">
@@ -301,13 +305,15 @@ export function HomePage({ projects }: { projects: Project[] }) {
             ))}
           </div>
         </section>
+
+        {/* SECTION 04: EXPERIENCE */}
         <section className="home-section" id="experience">
           <RuleTitle n="04">Experience</RuleTitle>
           <div className="experience-list">
-            {experience
-              .filter((item) => item.status !== "Education")
+            {experiences
+              .filter((item) => item.type === "experience")
               .map((item) => (
-                <details className="experience-item" key={item.organization} open>
+                <details className="experience-item" key={item.id} open>
                   <summary>
                     <span className="experience-org">
                       <i />
@@ -320,11 +326,11 @@ export function HomePage({ projects }: { projects: Project[] }) {
                       <span className="experience-entry-copy">
                         <span className="experience-role">{item.role}</span>
                         <span className="experience-meta">
-                          {item.status === "Active" ? "Current role" : "Internship"}
+                          {item.status === "Active" ? "Current role" : item.status}
                           <b />
                           {item.dates}
                         </span>
-                        <span className="sr-only">{item.location}</span>
+                        {item.location && <span className="sr-only">{item.location}</span>}
                       </span>
                       <ChevronsUpDown className="experience-chevron" aria-hidden="true" />
                     </span>
@@ -332,29 +338,32 @@ export function HomePage({ projects }: { projects: Project[] }) {
                   <div className="experience-body">
                     {item.bullets.length > 0 && (
                       <ul>
-                        {item.bullets.map((bullet) => (
-                          <li key={bullet}>{bullet}</li>
+                        {item.bullets.map((bullet, bIdx) => (
+                          <li key={bIdx}>{bullet}</li>
                         ))}
                       </ul>
                     )}
-                    <div className="chip-list">
-                      {item.stack.map((tag) => (
-                        <span key={tag}>{tag}</span>
-                      ))}
-                    </div>
+                    {item.stack.length > 0 && (
+                      <div className="chip-list">
+                        {item.stack.map((tag) => (
+                          <span key={tag}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </details>
               ))}
           </div>
         </section>
 
+        {/* SECTION 05: EDUCATION */}
         <section className="home-section" id="education">
           <RuleTitle n="05">Education</RuleTitle>
           <div className="experience-list education-list">
-            {experience
-              .filter((item) => item.status === "Education")
+            {experiences
+              .filter((item) => item.type === "education")
               .map((item) => (
-                <details className="experience-item" key={item.organization} open>
+                <details className="experience-item" key={item.id} open>
                   <summary>
                     <span className="experience-org">
                       <i />
@@ -380,6 +389,7 @@ export function HomePage({ projects }: { projects: Project[] }) {
           </div>
         </section>
 
+        {/* SECTION 06: PROJECTS */}
         <section className="home-section" id="projects">
           <RuleTitle n="06">Project case studies</RuleTitle>
           {projects.length ? (
@@ -393,12 +403,13 @@ export function HomePage({ projects }: { projects: Project[] }) {
                   viewport={{ once: true, amount: 0.18 }}
                   transition={{ duration: 0.45, delay: i * 0.07 }}
                 >
-                  <div className={`project-visual project-visual--${i + 1}`}>
+                  <div className={`project-visual project-visual--${(i % 3) + 1}`}>
                     {project.cover ? (
                       <Image
                         src={project.cover}
                         alt={`${project.title} preview`}
                         fill
+                        unoptimized
                         sizes="(max-width: 600px) 100vw, 360px"
                         className="project-visual-image"
                       />
@@ -432,7 +443,7 @@ export function HomePage({ projects }: { projects: Project[] }) {
                   </div>
                   <div className="project-links">
                     {project.links.live ? (
-                      <Link href={project.links.live}>
+                      <Link href={project.links.live} target="_blank" rel="noreferrer">
                         Live demo <ArrowUpRight size={13} />
                       </Link>
                     ) : null}
@@ -452,29 +463,46 @@ export function HomePage({ projects }: { projects: Project[] }) {
           )}
         </section>
 
+        {/* SECTION 07: GITHUB */}
         <section className="home-section" id="github">
           <RuleTitle n="07">GitHub</RuleTitle>
           <div className="github-panel">
             <div className="github-head">
               <Github size={17} />
-              <b>{siteContent.handles.github}</b>
+              <b>{profile.name}</b>
               <span>Code and repositories</span>
             </div>
             <div className="github-empty">
-              <a
-                href={`https://github.com/${siteContent.handles.github}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Explore my GitHub profile <ArrowUpRight size={14} />
-              </a>
+              {profile.socials.find((s) => s.name.toLowerCase().includes("github"))?.href ? (
+                <a
+                  href={profile.socials.find((s) => s.name.toLowerCase().includes("github"))!.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Explore my GitHub profile <ArrowUpRight size={14} />
+                </a>
+              ) : (
+                <a
+                  href={`https://github.com/${profile.name.replace(/\s+/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Explore my GitHub profile <ArrowUpRight size={14} />
+                </a>
+              )}
             </div>
           </div>
         </section>
-        {Object.values(siteContent.featureFlags).some(Boolean) && (
-          <div className="feature-placeholder">
-            Optional sections are enabled in content/site.ts.
-          </div>
+
+        {/* SECTION 08: QUOTE CALLOUT BLOCK BELOW GITHUB */}
+        {profile.quote && (
+          <section className="home-section" id="quote">
+            <RuleTitle n="08">Words to live by</RuleTitle>
+            <div className="home-quote-block">
+              <p className="home-quote-text">{profile.quote}</p>
+              <cite className="home-quote-author">— {profile.quoteAuthor || profile.name}</cite>
+            </div>
+          </section>
         )}
       </Container>
     </main>
