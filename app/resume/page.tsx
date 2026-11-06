@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Download, ExternalLink, FileText } from "lucide-react";
 import { InnerPage } from "@/components/sections/inner-page";
 import { getProjects } from "@/lib/projects";
@@ -115,14 +114,6 @@ export default async function ResumePage() {
            FALLBACK HTML RESUME SHEET (WHEN NO PDF UPLOADED YET)
            ======================================================== */
         <div>
-          <div className="admin-notice" style={{ marginBottom: 20 }}>
-            Upload your custom PDF resume in the{" "}
-            <Link href="/admin?tab=support" className="text-action">
-              Admin CMS (Resume &amp; Support tab)
-            </Link>{" "}
-            to display your official PDF document directly here.
-          </div>
-
           <article className="resume-sheet">
             <header>
               <h2>{profile.name}</h2>

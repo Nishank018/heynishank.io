@@ -20,15 +20,12 @@ async function seed() {
   const db = getDb();
   if (!db) throw new Error("DATABASE_URL is required to seed the database.");
 
-  // 1. Projects
+  // 1. Projects: only insert if not already present so user CMS edits are preserved
   for (const project of seedProjects) {
     await db
       .insert(projects)
       .values(project)
-      .onConflictDoUpdate({
-        target: projects.slug,
-        set: { ...project, updatedAt: new Date() },
-      });
+      .onConflictDoNothing({ target: projects.slug });
   }
   console.info(`Seeded ${seedProjects.length} portfolio projects.`);
 

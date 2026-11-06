@@ -1,15 +1,20 @@
-import { siteContent } from "@/content/site";
-import { experience } from "@/content/experience";
-import { projects } from "@/content/projects";
-import { skills } from "@/content/skills";
+import { getSiteProfile, getExperiences, getSkillGroups } from "@/lib/site-data";
+import { getProjects } from "@/lib/projects";
 
-export function getKnowledgeBase() {
+export async function getKnowledgeBase() {
+  const [profile, experiences, projects, skills] = await Promise.all([
+    getSiteProfile(),
+    getExperiences(),
+    getProjects(),
+    getSkillGroups(),
+  ]);
+
   return [
-    siteContent.name,
-    siteContent.location,
-    siteContent.roleLine,
-    ...siteContent.about,
-    ...experience.flatMap((item) => [
+    profile.name,
+    profile.location,
+    profile.roleLine,
+    ...profile.about,
+    ...experiences.flatMap((item) => [
       item.organization,
       item.role,
       item.dates,

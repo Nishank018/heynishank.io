@@ -47,6 +47,13 @@ export default async function AdminPage({
     console.error("Auth session check error in AdminPage:", err);
     session = null;
   }
+  const allowedUser = process.env.AUTH_GITHUB_ALLOWED_USERNAME?.trim().toLowerCase();
+  const isAuthorized = Boolean(
+    session?.user?.name &&
+    allowedUser &&
+    session.user.name.toLowerCase() === allowedUser
+  );
+
   if (!session?.user) {
     return (
       <InnerPage
@@ -61,6 +68,28 @@ export default async function AdminPage({
           }}
         >
           <button className="outline-action">Sign in with GitHub</button>
+        </form>
+      </InnerPage>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <InnerPage
+        route="admin / unauthorized"
+        title="Unauthorized Account"
+        subtitle={`The signed-in GitHub account (@${session.user.name ?? "unknown"}) is not authorized.`}
+      >
+        <div className="admin-notice">
+          Only @{allowedUser} has permission to access this CMS.
+        </div>
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/admin" });
+          }}
+        >
+          <button className="outline-action">Sign out</button>
         </form>
       </InnerPage>
     );
@@ -96,7 +125,11 @@ export default async function AdminPage({
       </div>
 
       {params.error === "invalid" && (
-        <p className="admin-feedback">Some fields are invalid. Review your input and try again.</p>
+        <p className="admin-feedback">
+          {params.detail
+            ? `Validation error (${params.detail}). Please review and try again.`
+            : "Some fields are invalid. Review your input and try again."}
+        </p>
       )}
       {params.error === "database" && (
         <p className="admin-feedback">DATABASE_URL is required to save changes.</p>

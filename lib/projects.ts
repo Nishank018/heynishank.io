@@ -4,11 +4,7 @@ import { getDb } from "@/lib/db";
 import { projects as projectTable } from "@/lib/db/schema";
 
 function visibleProjects(projects: Project[], includeUnpublished: boolean) {
-  return projects.filter(
-    (project) =>
-      (includeUnpublished || project.published) &&
-      (includeUnpublished || Boolean(project.links.live || project.links.github)),
-  );
+  return projects.filter((project) => includeUnpublished || project.published);
 }
 
 export async function getProjects(

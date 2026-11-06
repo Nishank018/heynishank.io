@@ -7,7 +7,10 @@ export function ProfileViews() {
   const [views, setViews] = useState<number | null>(null);
   useEffect(() => {
     let active = true;
-    fetch("/api/views", { cache: "no-store" })
+    const viewed = sessionStorage.getItem("portfolio_viewed");
+    const method = viewed ? "GET" : "POST";
+
+    fetch("/api/views", { method, cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
         const payload: unknown = await response.json();
@@ -17,8 +20,10 @@ export function ProfileViews() {
           payload !== null &&
           "views" in payload &&
           typeof payload.views === "number"
-        )
+        ) {
           setViews(payload.views);
+          sessionStorage.setItem("portfolio_viewed", "1");
+        }
       })
       .catch(() => undefined);
     return () => {

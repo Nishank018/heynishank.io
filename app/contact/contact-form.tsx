@@ -7,27 +7,39 @@ export function ContactForm() {
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formEl = event.currentTarget;
     setBusy(true);
     setStatus("");
-    const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.get("name"),
-        email: form.get("email"),
-        message: form.get("message"),
-      }),
-    });
-    const result = (await response.json()) as { error?: string };
-    setStatus(
-      response.ok
-        ? "Message sent."
-        : result.error === "not_configured"
-          ? "Contact delivery is not configured yet."
-          : "Could not send your message. Please try again later.",
-    );
-    setBusy(false);
+
+    try {
+      const form = new FormData(formEl);
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.get("name"),
+          email: form.get("email"),
+          message: form.get("message"),
+        }),
+      });
+
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (response.ok) {
+        setStatus("Message sent. Thank you for reaching out!");
+        formEl.reset();
+      } else if (result.error === "not_configured") {
+        setStatus("Contact delivery is not configured yet.");
+      } else if (result.error === "rate_limited") {
+        setStatus("Too many messages sent. Please wait a bit before trying again.");
+      } else {
+        setStatus("Could not send your message. Please try again later.");
+      }
+    } catch {
+      setStatus("Network error. Please check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <form className="contact-form" onSubmit={submit}>

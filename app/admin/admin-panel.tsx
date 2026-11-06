@@ -377,7 +377,7 @@ export function AdminPanel({
                 <input type="hidden" name="pfp1" value={profile.pfp1} />
                 <input type="hidden" name="pfp2" value={profile.pfp2} />
                 <input type="hidden" name="roleTitles" value={profile.roleTitles.join("\n")} />
-                <input type="hidden" name="about" value={profile.about.join("\n\n")} />
+                <input type="hidden" name="about" value={JSON.stringify(profile.about)} />
                 <input type="hidden" name="quote" value={profile.quote} />
                 <input type="hidden" name="quoteAuthor" value={profile.quoteAuthor} />
                 <input type="hidden" name="resumeUrl" value={profile.resumeUrl} />
@@ -509,7 +509,14 @@ export function AdminPanel({
                   </form>
 
                   <div className="admin-secondary">
-                    <form action={deleteSkillGroup}>
+                    <form
+                      action={deleteSkillGroup}
+                      onSubmit={(e) => {
+                        if (!confirm(`Are you sure you want to delete skill group "${skillGroup.group}"?`)) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
                       <input type="hidden" name="id" value={skillGroup.id} />
                       <button disabled={disabled} className="admin-delete">
                         Delete Group
@@ -655,7 +662,7 @@ export function AdminPanel({
             <input type="hidden" name="pfp1" value={profile.pfp1} />
             <input type="hidden" name="pfp2" value={profile.pfp2} />
             <input type="hidden" name="roleTitles" value={profile.roleTitles.join("\n")} />
-            <input type="hidden" name="about" value={profile.about.join("\n\n")} />
+            <input type="hidden" name="about" value={JSON.stringify(profile.about)} />
             <input type="hidden" name="quote" value={profile.quote} />
             <input type="hidden" name="quoteAuthor" value={profile.quoteAuthor} />
             <input type="hidden" name="resumeUrl" value={profile.resumeUrl} />
@@ -673,7 +680,7 @@ export function AdminPanel({
                     value={link.name}
                     onChange={(e) => {
                       const updated = [...socials];
-                      updated[idx].name = e.target.value;
+                      updated[idx] = { ...updated[idx], name: e.target.value };
                       setSocials(updated);
                     }}
                     placeholder="Platform"
@@ -689,7 +696,7 @@ export function AdminPanel({
                     value={link.href}
                     onChange={(e) => {
                       const updated = [...socials];
-                      updated[idx].href = e.target.value;
+                      updated[idx] = { ...updated[idx], href: e.target.value };
                       setSocials(updated);
                     }}
                     placeholder="https://..."
@@ -705,7 +712,7 @@ export function AdminPanel({
                     value={link.detail || ""}
                     onChange={(e) => {
                       const updated = [...socials];
-                      updated[idx].detail = e.target.value;
+                      updated[idx] = { ...updated[idx], detail: e.target.value };
                       setSocials(updated);
                     }}
                     placeholder="@handle"
@@ -763,7 +770,7 @@ export function AdminPanel({
             <input type="hidden" name="pfp1" value={profile.pfp1} />
             <input type="hidden" name="pfp2" value={profile.pfp2} />
             <input type="hidden" name="roleTitles" value={profile.roleTitles.join("\n")} />
-            <input type="hidden" name="about" value={profile.about.join("\n\n")} />
+            <input type="hidden" name="about" value={JSON.stringify(profile.about)} />
             <input type="hidden" name="socials" value={JSON.stringify(profile.socials)} />
             <input type="hidden" name="resumeUrl" value={profile.resumeUrl} />
             <input type="hidden" name="homeProjectCount" value={profile.homeProjectCount} />
@@ -838,7 +845,7 @@ export function AdminPanel({
               <input type="hidden" name="pfp1" value={profile.pfp1} />
               <input type="hidden" name="pfp2" value={profile.pfp2} />
               <input type="hidden" name="roleTitles" value={profile.roleTitles.join("\n")} />
-              <input type="hidden" name="about" value={profile.about.join("\n\n")} />
+              <input type="hidden" name="about" value={JSON.stringify(profile.about)} />
               <input type="hidden" name="quote" value={profile.quote} />
               <input type="hidden" name="quoteAuthor" value={profile.quoteAuthor} />
               <input type="hidden" name="socials" value={JSON.stringify(profile.socials)} />
@@ -881,7 +888,7 @@ export function AdminPanel({
               <input type="hidden" name="pfp1" value={profile.pfp1} />
               <input type="hidden" name="pfp2" value={profile.pfp2} />
               <input type="hidden" name="roleTitles" value={profile.roleTitles.join("\n")} />
-              <input type="hidden" name="about" value={profile.about.join("\n\n")} />
+              <input type="hidden" name="about" value={JSON.stringify(profile.about)} />
               <input type="hidden" name="quote" value={profile.quote} />
               <input type="hidden" name="quoteAuthor" value={profile.quoteAuthor} />
               <input type="hidden" name="socials" value={JSON.stringify(profile.socials)} />
@@ -1328,7 +1335,14 @@ function ExperienceEditor({
 
       {!isNew && (
         <div className="admin-secondary">
-          <form action={deleteExperience}>
+          <form
+            action={deleteExperience}
+            onSubmit={(e) => {
+              if (!confirm(`Are you sure you want to delete experience "${item.organization} — ${item.role}"?`)) {
+                e.preventDefault();
+              }
+            }}
+          >
             <input type="hidden" name="id" value={item.id} />
             <button disabled={disabled} className="admin-delete">
               Delete Entry

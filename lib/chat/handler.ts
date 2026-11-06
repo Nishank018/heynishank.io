@@ -6,7 +6,7 @@ export type ChatSource = { title: string; url: string };
 
 export async function getMockReply(messages: ChatInputMessage[]) {
   const question = messages.at(-1)?.content.toLowerCase() ?? "";
-  const knowledge = getKnowledgeBase();
+  const knowledge = await getKnowledgeBase();
   const projects = await getProjects();
   const matchedProject = projects.find((project) => question.includes(project.title.toLowerCase()));
   const isContactTask = ["contact", "email", "call", "reach"].some((term) =>

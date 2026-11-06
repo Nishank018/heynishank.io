@@ -1,11 +1,13 @@
 "use server";
 
-import { asc, eq } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { projectSchema } from "@/content/projects";
 import { siteContent as fallbackSite } from "@/content/site";
+import { experience as fallbackExperience } from "@/content/experience";
+import { skills as fallbackSkills } from "@/content/skills";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import {
@@ -25,18 +27,25 @@ async function requireDatabaseAndOwner() {
     console.error("Auth check error in action:", err);
     redirect("/admin?error=unauthorized");
   }
-  if (!session?.user || !process.env.AUTH_GITHUB_ALLOWED_USERNAME)
+  const allowedUser = process.env.AUTH_GITHUB_ALLOWED_USERNAME?.trim().toLowerCase();
+  if (
+    !session?.user ||
+    !allowedUser ||
+    session.user.name?.toLowerCase() !== allowedUser
+  ) {
     redirect("/admin?error=unauthorized");
+  }
   const database = getDb();
   if (!database) redirect("/admin?error=database");
   return database;
 }
 
-function refreshAllViews(slug?: string) {
+function refreshAllViews(slug?: string, oldSlug?: string) {
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/projects");
   if (slug) revalidatePath(`/projects/${slug}`);
+  if (oldSlug && oldSlug !== slug) revalidatePath(`/projects/${oldSlug}`);
   revalidatePath("/resume");
   revalidatePath("/support");
   revalidatePath("/sitemap.xml");
@@ -54,17 +63,26 @@ function readProject(form: FormData) {
   } catch {
     metrics = null;
   }
-  const live = String(form.get("live") ?? "").trim();
-  const github = String(form.get("github") ?? "").trim();
+  let live = String(form.get("live") ?? "").trim();
+  let github = String(form.get("github") ?? "").trim();
   const cover = String(form.get("cover") ?? "").trim();
+
+  // Normalize URLs to satisfy schema
+  if (live && !live.startsWith("http://") && !live.startsWith("https://") && !live.startsWith("/")) {
+    live = `https://${live}`;
+  }
+  if (github && !github.startsWith("http://") && !github.startsWith("https://")) {
+    github = `https://${github}`;
+  }
+
   return projectSchema.safeParse({
-    slug: String(form.get("slug") ?? "").trim(),
+    slug: String(form.get("slug") ?? "").trim().toLowerCase(),
     title: String(form.get("title") ?? "").trim(),
     tagline: String(form.get("tagline") ?? "").trim(),
-    status: String(form.get("status") ?? ""),
+    status: String(form.get("status") ?? "").toLowerCase(),
     categories: String(form.get("categories") ?? "")
       .split(",")
-      .map((value) => value.trim())
+      .map((value) => value.trim().toLowerCase())
       .filter(Boolean),
     stack: String(form.get("stack") ?? "")
       .split(",")
@@ -79,7 +97,7 @@ function readProject(form: FormData) {
     links: { live: live || undefined, github: github || undefined },
     cover: cover || undefined,
     featured: form.get("featured") === "on",
-    order: Number(form.get("order")),
+    order: Number(form.get("order") || 0),
     published: form.get("published") === "on",
   });
 }
@@ -87,18 +105,24 @@ function readProject(form: FormData) {
 export async function saveProject(form: FormData) {
   const database = await requireDatabaseAndOwner();
   const parsed = readProject(form);
-  if (!parsed.success) redirect("/admin?tab=projects&error=invalid");
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const field = issue?.path.join(".") || "field";
+    const detail = encodeURIComponent(`${field}: ${issue?.message || "invalid"}`);
+    redirect(`/admin?tab=projects&error=invalid&detail=${detail}`);
+  }
   const project = parsed.data;
   const oldSlug = String(form.get("previousSlug") ?? project.slug).trim();
   await database.transaction(async (tx) => {
+    if (oldSlug && oldSlug !== project.slug) {
+      await tx.delete(projects).where(eq(projects.slug, oldSlug));
+    }
     await tx
       .insert(projects)
       .values(project)
       .onConflictDoUpdate({ target: projects.slug, set: { ...project, updatedAt: new Date() } });
-    if (oldSlug && oldSlug !== project.slug)
-      await tx.delete(projects).where(eq(projects.slug, oldSlug));
   });
-  refreshAllViews(project.slug);
+  refreshAllViews(project.slug, oldSlug);
   redirect("/admin?tab=projects&saved=1");
 }
 
@@ -185,6 +209,23 @@ export async function moveProject(form: FormData) {
    PROFILE ACTIONS (Bio, PFPs, Quote, Support, Resume)
    ======================================================== */
 
+const DEFAULT_QUOTE =
+  "“Code is read much more often than it is written, so plan for clarity, ship with discipline, and build things that genuinely help people.”";
+
+function sanitizeSafeUrl(val?: string): string {
+  if (!val) return "";
+  const trimmed = val.trim();
+  if (
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("mailto:")
+  ) {
+    return trimmed;
+  }
+  return "";
+}
+
 export async function saveSiteProfile(form: FormData) {
   const database = await requireDatabaseAndOwner();
 
@@ -192,11 +233,11 @@ export async function saveSiteProfile(form: FormData) {
   const location = String(form.get("location") ?? "").trim();
   const roleLine = String(form.get("roleLine") ?? "").trim();
   const bannerText = String(form.get("bannerText") ?? "").trim();
-  const pfp1 = String(form.get("pfp1") ?? "").trim() || "/profile.png";
-  const pfp2 = String(form.get("pfp2") ?? "").trim() || "/profile-real.jpg";
+  const pfp1 = sanitizeSafeUrl(String(form.get("pfp1") ?? "")) || "/profile.png";
+  const pfp2 = sanitizeSafeUrl(String(form.get("pfp2") ?? "")) || "/profile-real.jpg";
   const quote = String(form.get("quote") ?? "").trim();
   const quoteAuthor = String(form.get("quoteAuthor") ?? "").trim();
-  const resumeUrl = String(form.get("resumeUrl") ?? "").trim();
+  const resumeUrl = sanitizeSafeUrl(String(form.get("resumeUrl") ?? ""));
   const homeProjectCount = Math.max(1, Number(form.get("homeProjectCount") || 4));
 
   // Role titles for typewriter effect
@@ -206,17 +247,14 @@ export async function saveSiteProfile(form: FormData) {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // About bullets / bio points
+  // About bullets / bio points (clean array without destructive splitting)
   const aboutRaw = String(form.get("about") ?? "");
   let about: string[] = [];
   try {
     const parsed = JSON.parse(aboutRaw);
     if (Array.isArray(parsed)) {
       about = parsed
-        .flatMap((item: unknown) =>
-          typeof item === "string" ? item.split(/\r?\n+/) : [],
-        )
-        .map((s) => s.trim())
+        .map((item: unknown) => (typeof item === "string" ? item.trim() : ""))
         .filter(Boolean);
     }
   } catch {
@@ -226,21 +264,30 @@ export async function saveSiteProfile(form: FormData) {
       .filter(Boolean);
   }
 
-  // Social links JSON
+  // Social links JSON with URL protocol sanitization
   let socials: SocialLink[] = [];
   try {
     const socialsJson = String(form.get("socials") ?? "");
-    if (socialsJson) socials = JSON.parse(socialsJson);
+    if (socialsJson) {
+      const parsedSocials = JSON.parse(socialsJson);
+      if (Array.isArray(parsedSocials)) {
+        socials = parsedSocials.map((s: SocialLink) => ({
+          name: String(s.name ?? "").trim(),
+          href: sanitizeSafeUrl(s.href),
+          detail: s.detail ? String(s.detail).trim() : undefined,
+        }));
+      }
+    }
   } catch {
     socials = [];
   }
 
-  // Support config
+  // Support config with URL sanitization
   const support: SupportConfig = {
-    coffee: String(form.get("supportCoffee") ?? "").trim(),
-    github: String(form.get("supportGithub") ?? "").trim(),
+    coffee: sanitizeSafeUrl(String(form.get("supportCoffee") ?? "")),
+    github: sanitizeSafeUrl(String(form.get("supportGithub") ?? "")),
     upi: String(form.get("supportUpi") ?? "").trim(),
-    qr: String(form.get("supportQr") ?? "").trim(),
+    qr: sanitizeSafeUrl(String(form.get("supportQr") ?? "")),
     note: String(form.get("supportNote") ?? "").trim(),
   };
 
@@ -258,8 +305,8 @@ export async function saveSiteProfile(form: FormData) {
       pfp1,
       pfp2,
       about: about.length ? about : [...fallbackSite.about],
-      quote,
-      quoteAuthor,
+      quote: quote || DEFAULT_QUOTE,
+      quoteAuthor: quoteAuthor || fallbackSite.name,
       resumeUrl,
       homeProjectCount,
       socials,
@@ -277,8 +324,8 @@ export async function saveSiteProfile(form: FormData) {
         pfp1,
         pfp2,
         about: about.length ? about : [...fallbackSite.about],
-        quote,
-        quoteAuthor,
+        quote: quote || DEFAULT_QUOTE,
+        quoteAuthor: quoteAuthor || fallbackSite.name,
         resumeUrl,
         homeProjectCount,
         socials,
@@ -323,8 +370,35 @@ export async function saveExperience(form: FormData) {
     redirect("/admin?tab=experience&error=invalid");
   }
 
-  const isNew = !id || id.startsWith("new");
+  const isFallback = id.startsWith("fallback-");
+  const isNew = !id || id.startsWith("new") || isFallback;
   const targetId = isNew ? crypto.randomUUID() : id;
+
+  // If first time saving when DB was unseeded, seed the other fallback experiences
+  if (isFallback) {
+    const [expCount] = await database.select({ value: count() }).from(experiences);
+    if (Number(expCount?.value ?? 0) === 0) {
+      let orderIdx = 0;
+      for (let i = 0; i < fallbackExperience.length; i++) {
+        const fb = fallbackExperience[i];
+        if (`fallback-${i}` !== id) {
+          await database.insert(experiences).values({
+            id: crypto.randomUUID(),
+            type: fb.status === "Education" ? "education" : "experience",
+            organization: fb.organization,
+            role: fb.role,
+            location: fb.location,
+            dates: fb.dates,
+            status: fb.status,
+            bullets: [...fb.bullets],
+            stack: [...fb.stack],
+            order: orderIdx++,
+            updatedAt: new Date(),
+          });
+        }
+      }
+    }
+  }
 
   await database
     .insert(experiences)
@@ -366,7 +440,33 @@ export async function deleteExperience(form: FormData) {
   const id = String(form.get("id") ?? "").trim();
   if (!id) redirect("/admin?tab=experience&error=invalid");
 
-  await database.delete(experiences).where(eq(experiences.id, id));
+  if (id.startsWith("fallback-")) {
+    const [expCount] = await database.select({ value: count() }).from(experiences);
+    if (Number(expCount?.value ?? 0) === 0) {
+      let orderIdx = 0;
+      for (let i = 0; i < fallbackExperience.length; i++) {
+        const fb = fallbackExperience[i];
+        if (`fallback-${i}` !== id) {
+          await database.insert(experiences).values({
+            id: crypto.randomUUID(),
+            type: fb.status === "Education" ? "education" : "experience",
+            organization: fb.organization,
+            role: fb.role,
+            location: fb.location,
+            dates: fb.dates,
+            status: fb.status,
+            bullets: [...fb.bullets],
+            stack: [...fb.stack],
+            order: orderIdx++,
+            updatedAt: new Date(),
+          });
+        }
+      }
+    }
+  } else {
+    await database.delete(experiences).where(eq(experiences.id, id));
+  }
+
   refreshAllViews();
   redirect("/admin?tab=experience&deleted=1");
 }
@@ -391,8 +491,30 @@ export async function saveSkillGroup(form: FormData) {
 
   if (!group) redirect("/admin?tab=skills&error=invalid");
 
-  const isNew = !id || id.startsWith("new");
+  const isFallback = id.startsWith("fallback-");
+  const isNew = !id || id.startsWith("new") || isFallback;
   const targetId = isNew ? crypto.randomUUID() : id;
+
+  // If first time saving when DB was unseeded, seed the other fallback skill groups
+  if (isFallback) {
+    const [skillCount] = await database.select({ value: count() }).from(skillGroups);
+    if (Number(skillCount?.value ?? 0) === 0) {
+      let orderIdx = 0;
+      for (let i = 0; i < fallbackSkills.length; i++) {
+        const fb = fallbackSkills[i];
+        if (`fallback-${i}` !== id) {
+          await database.insert(skillGroups).values({
+            id: crypto.randomUUID(),
+            number: fb.number,
+            group: fb.group,
+            items: [...fb.items],
+            order: orderIdx++,
+            updatedAt: new Date(),
+          });
+        }
+      }
+    }
+  }
 
   await database
     .insert(skillGroups)
@@ -424,7 +546,28 @@ export async function deleteSkillGroup(form: FormData) {
   const id = String(form.get("id") ?? "").trim();
   if (!id) redirect("/admin?tab=skills&error=invalid");
 
-  await database.delete(skillGroups).where(eq(skillGroups.id, id));
+  if (id.startsWith("fallback-")) {
+    const [skillCount] = await database.select({ value: count() }).from(skillGroups);
+    if (Number(skillCount?.value ?? 0) === 0) {
+      let orderIdx = 0;
+      for (let i = 0; i < fallbackSkills.length; i++) {
+        const fb = fallbackSkills[i];
+        if (`fallback-${i}` !== id) {
+          await database.insert(skillGroups).values({
+            id: crypto.randomUUID(),
+            number: fb.number,
+            group: fb.group,
+            items: [...fb.items],
+            order: orderIdx++,
+            updatedAt: new Date(),
+          });
+        }
+      }
+    }
+  } else {
+    await database.delete(skillGroups).where(eq(skillGroups.id, id));
+  }
+
   refreshAllViews();
   redirect("/admin?tab=skills&deleted=1");
 }

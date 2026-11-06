@@ -42,6 +42,7 @@ export function ProjectList({ projects }: { projects: Project[] }) {
                     src={project.cover}
                     alt={`${project.title} preview`}
                     fill
+                    unoptimized
                     sizes="(max-width: 768px) 100vw, 768px"
                     className="project-visual-image"
                   />

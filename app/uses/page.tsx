@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowUpRight, Code2, Database, Globe, Terminal } from "lucide-react";
+import { Code2, Database, Globe, Terminal } from "lucide-react";
 import { InnerPage } from "@/components/sections/inner-page";
 
 export const metadata: Metadata = {
@@ -32,7 +32,6 @@ export default function UsesPage() {
               <b>{row.title}</b>
               <small>{row.description}</small>
             </span>
-            <ArrowUpRight size={14} />
           </div>
         ))}
       </div>

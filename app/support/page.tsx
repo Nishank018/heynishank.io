@@ -10,6 +10,11 @@ export const metadata: Metadata = {
 };
 export const revalidate = 60;
 
+function isSafeUrl(url?: string): boolean {
+  if (!url) return false;
+  return url.startsWith("https://") || url.startsWith("http://");
+}
+
 export default async function SupportPage() {
   const profile = await getSiteProfile();
   const support = profile.support || {};
@@ -24,7 +29,7 @@ export default async function SupportPage() {
       subtitle="Thanks for being here. Every contribution fuels independent development and learning."
     >
       <div className="support-options">
-        {support.coffee ? (
+        {isSafeUrl(support.coffee) ? (
           <a
             href={support.coffee}
             target="_blank"
@@ -45,7 +50,7 @@ export default async function SupportPage() {
           </div>
         )}
 
-        {support.github ? (
+        {isSafeUrl(support.github) ? (
           <a
             href={support.github}
             target="_blank"

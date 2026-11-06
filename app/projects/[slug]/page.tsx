@@ -39,6 +39,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
             src={project.cover}
             alt={`${project.title} screenshot`}
             fill
+            unoptimized
             sizes="(max-width: 768px) 100vw, 768px"
             className="case-study-image"
             priority
@@ -67,7 +68,11 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
       </div>
       <div className="project-link-buttons case-links">
         {project.links.live ? (
-          <Link href={project.links.live}>
+          <Link
+            href={project.links.live}
+            target={project.links.live.startsWith("http") ? "_blank" : undefined}
+            rel={project.links.live.startsWith("http") ? "noreferrer" : undefined}
+          >
             Live project <ArrowUpRight size={14} />
           </Link>
         ) : null}

@@ -108,7 +108,14 @@ export function HomePage({
 
   const socialLinks = profile.socials.map((s) => ({
     name: s.name,
-    href: s.href || undefined,
+    href:
+      s.href &&
+      (s.href.startsWith("http://") ||
+        s.href.startsWith("https://") ||
+        s.href.startsWith("mailto:") ||
+        s.href.startsWith("/"))
+        ? s.href
+        : undefined,
     detail: s.detail || "",
     icon: getSocialIcon(s.name),
   }));
