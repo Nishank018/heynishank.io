@@ -28,11 +28,7 @@ async function requireDatabaseAndOwner() {
     redirect("/admin?error=unauthorized");
   }
   const allowedUser = process.env.AUTH_GITHUB_ALLOWED_USERNAME?.trim().toLowerCase();
-  if (
-    !session?.user ||
-    !allowedUser ||
-    session.user.name?.toLowerCase() !== allowedUser
-  ) {
+  if (!session?.user || !allowedUser || session.user.name?.toLowerCase() !== allowedUser) {
     redirect("/admin?error=unauthorized");
   }
   const database = getDb();
@@ -68,22 +64,65 @@ function readProject(form: FormData) {
   const cover = String(form.get("cover") ?? "").trim();
 
   // Normalize URLs to satisfy schema
-  if (live && !live.startsWith("http://") && !live.startsWith("https://") && !live.startsWith("/")) {
+  if (
+    live &&
+    !live.startsWith("http://") &&
+    !live.startsWith("https://") &&
+    !live.startsWith("/")
+  ) {
     live = `https://${live}`;
   }
   if (github && !github.startsWith("http://") && !github.startsWith("https://")) {
     github = `https://${github}`;
   }
 
+  let rawStatus = String(form.get("status") ?? "")
+    .toLowerCase()
+    .trim();
+  if (rawStatus === "in progress" || rawStatus === "in-progress" || rawStatus === "wip") {
+    rawStatus = "building";
+  } else if (rawStatus === "completed" || rawStatus === "done") {
+    rawStatus = "live";
+  }
+
+  const categoryMap: Record<string, "ai" | "fullstack" | "oss"> = {
+    ai: "ai",
+    "artificial intelligence": "ai",
+    ml: "ai",
+    "machine learning": "ai",
+    fullstack: "fullstack",
+    "full-stack": "fullstack",
+    "full stack": "fullstack",
+    oss: "oss",
+    "open source": "oss",
+    "open-source": "oss",
+  };
+
+  const rawCategories = String(form.get("categories") ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  const normalizedCategories = Array.from(
+    new Set(
+      rawCategories
+        .map(
+          (cat) =>
+            categoryMap[cat] ??
+            (["ai", "fullstack", "oss"].includes(cat) ? (cat as "ai" | "fullstack" | "oss") : null),
+        )
+        .filter((cat): cat is "ai" | "fullstack" | "oss" => Boolean(cat)),
+    ),
+  );
+
   return projectSchema.safeParse({
-    slug: String(form.get("slug") ?? "").trim().toLowerCase(),
+    slug: String(form.get("slug") ?? "")
+      .trim()
+      .toLowerCase(),
     title: String(form.get("title") ?? "").trim(),
     tagline: String(form.get("tagline") ?? "").trim(),
-    status: String(form.get("status") ?? "").toLowerCase(),
-    categories: String(form.get("categories") ?? "")
-      .split(",")
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean),
+    status: rawStatus,
+    categories: normalizedCategories.length > 0 ? normalizedCategories : rawCategories,
     stack: String(form.get("stack") ?? "")
       .split(",")
       .map((value) => value.trim())
@@ -301,7 +340,9 @@ export async function saveSiteProfile(form: FormData) {
       location: location || "Lucknow, India",
       roleLine: roleLine || "AI Engineer in training · Full Stack Developer",
       bannerText: bannerText || "Open to AI engineering roles",
-      roleTitles: roleTitles.length ? roleTitles : ["AI Engineer in training", "Full-stack developer"],
+      roleTitles: roleTitles.length
+        ? roleTitles
+        : ["AI Engineer in training", "Full-stack developer"],
       pfp1,
       pfp2,
       about: about.length ? about : [...fallbackSite.about],
@@ -320,7 +361,9 @@ export async function saveSiteProfile(form: FormData) {
         location: location || "Lucknow, India",
         roleLine: roleLine || "AI Engineer in training · Full Stack Developer",
         bannerText: bannerText || "Open to AI engineering roles",
-        roleTitles: roleTitles.length ? roleTitles : ["AI Engineer in training", "Full-stack developer"],
+        roleTitles: roleTitles.length
+          ? roleTitles
+          : ["AI Engineer in training", "Full-stack developer"],
         pfp1,
         pfp2,
         about: about.length ? about : [...fallbackSite.about],
@@ -346,7 +389,8 @@ export async function saveExperience(form: FormData) {
   const database = await requireDatabaseAndOwner();
 
   const id = String(form.get("id") ?? "").trim();
-  const type = (String(form.get("type") ?? "experience") as "experience" | "education") || "experience";
+  const type =
+    (String(form.get("type") ?? "experience") as "experience" | "education") || "experience";
   const organization = String(form.get("organization") ?? "").trim();
   const role = String(form.get("role") ?? "").trim();
   const location = String(form.get("location") ?? "").trim();

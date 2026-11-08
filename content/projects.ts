@@ -45,6 +45,40 @@ export type Project = z.infer<typeof projectSchema>;
 
 export const projects: Project[] = [
   {
+    slug: "draftwell-studio",
+    title: "Draftwell Studio",
+    status: "building",
+    categories: ["ai", "oss"],
+    tagline: "An AI-powered blog writing workflow built with LangGraph.",
+    summary:
+      "A personal AI blog-writing project that uses multiple agents to research, plan, write, and assemble blog posts.",
+    problem:
+      "I wanted to go beyond basic chatbot workflows and understand how multiple AI agents can work together to complete a larger task.",
+    approach:
+      "Built a LangGraph workflow with routing, research, planning, parallel section writers, content editing, and image sourcing. Connected the Python backend to a React frontend using FastAPI and server-sent events for live workflow updates.",
+    result:
+      "Built a working frontend and backend integration with a multi-agent writing workflow. The project is still a work in progress, and I'm continuing to improve and test the generation pipeline.",
+    stack: [
+      "Python",
+      "LangGraph",
+      "FastAPI",
+      "React",
+      "TypeScript",
+      "Vite",
+      "Gemini API",
+      "Tavily",
+      "Wikimedia Commons",
+    ],
+    links: {
+      github: "https://github.com/nishank018/ai-blog-writing-agent",
+    },
+    cover: "/projects/draftwell-studio.png",
+    badge: "Open Source · Work in Progress",
+    featured: true,
+    order: 1,
+    published: true,
+  },
+  {
     slug: "playlistpilot",
     title: "PlaylistPilot",
     status: "live",
@@ -65,7 +99,7 @@ export const projects: Project[] = [
     cover: "/projects/playlistpilot.png",
     badge: "v2.0",
     featured: true,
-    order: 1,
+    order: 2,
     published: true,
   },
   {
@@ -80,7 +114,7 @@ export const projects: Project[] = [
     stack: ["PHP", "MySQL", "JavaScript", "Charts"],
     links: {},
     featured: true,
-    order: 2,
+    order: 3,
     published: true,
   },
   {
@@ -95,7 +129,7 @@ export const projects: Project[] = [
     stack: ["Python", "OpenAI API", "Gemini API"],
     links: {},
     featured: true,
-    order: 3,
+    order: 4,
     published: true,
   },
   {
@@ -104,13 +138,15 @@ export const projects: Project[] = [
     status: "building",
     categories: ["ai", "fullstack"],
     tagline: "A prototype chat interface for exploring my portfolio.",
-    summary: "A work-in-progress portfolio assistant using deterministic responses while the AI backend is explored.",
+    summary:
+      "A work-in-progress portfolio assistant using deterministic responses while the AI backend is explored.",
     problem: "Visitors need a quick way to find relevant work and background.",
-    approach: "A chat interface with a mock response backend, built as a step toward a portfolio assistant.",
+    approach:
+      "A chat interface with a mock response backend, built as a step toward a portfolio assistant.",
     stack: ["Next.js", "TypeScript"],
     links: { live: "/chat" },
     featured: true,
-    order: 4,
+    order: 5,
     published: true,
   },
 ].map((project) => projectSchema.parse(project));
