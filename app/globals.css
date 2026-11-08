@@ -2047,25 +2047,26 @@ button:disabled {
     font-size: 10px;
   }
   .projects-grid {
-    gap: 7px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .project-card {
-    padding: 8px;
+    padding: 10px;
   }
   .project-visual {
     height: auto;
     aspect-ratio: 16 / 10;
-    min-height: 140px;
+    min-height: unset;
   }
   .project-card h3 {
-    font-size: 12px;
+    font-size: 13.5px;
   }
   .project-card > p {
-    min-height: 40px;
-    font-size: 11px;
+    min-height: unset;
+    font-size: 12px;
   }
   .project-card .chip-list span {
-    font-size: 9px;
+    font-size: 10px;
   }
   .stack-row {
     grid-template-columns: 24px 1fr;
@@ -2577,14 +2578,16 @@ button:disabled {
     gap: 12px;
   }
   .inner-project__cover {
-    min-height: 180px;
+    min-height: unset;
     aspect-ratio: 16 / 9;
   }
   .inner-project__heading h2 {
     font-size: 17px;
   }
   .inner-project__heading {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
   .project-link-buttons {
     justify-content: flex-start;
@@ -2608,7 +2611,8 @@ button:disabled {
     gap: 3px;
   }
   .case-row {
-    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
   .chart-heading {
     align-items: flex-start;
